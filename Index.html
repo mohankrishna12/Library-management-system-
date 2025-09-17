@@ -1,0 +1,77 @@
+-- Create Author table
+CREATE TABLE Author (
+    AuthorID INT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL
+);
+
+-- Create Book table
+CREATE TABLE Book (
+    BookID INT PRIMARY KEY,
+    Title VARCHAR(255) NOT NULL,
+    AuthorID INT,
+    YearPublished INT,
+    CONSTRAINT FK_BookAuthor FOREIGN KEY (AuthorID) REFERENCES Author(AuthorID)
+);
+
+-- Create Member table
+CREATE TABLE Member (
+    MemberID INT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    JoinDate DATE NOT NULL
+);
+
+-- Create Borrow table
+CREATE TABLE Borrow (
+    BorrowID INT PRIMARY KEY,
+    BookID INT,
+    MemberID INT,
+    BorrowDate DATE NOT NULL,
+    DueDate DATE NOT NULL,
+    ReturnDate DATE,
+    CONSTRAINT FK_BorrowBook FOREIGN KEY (BookID) REFERENCES Book(BookID),
+    CONSTRAINT FK_BorrowMember FOREIGN KEY (MemberID) REFERENCES Member(MemberID)
+);
+
+-- Sample inserts
+INSERT INTO Author VALUES (1, 'J.K. Rowling'), (2, 'George Orwell');
+
+INSERT INTO Book VALUES 
+(1, 'Harry Potter and the Sorcerer''s Stone', 1, 1997),
+(2, '1984', 2, 1949);
+
+INSERT INTO Member VALUES
+(1, 'Alice Smith', '2024-01-15'),
+(2, 'Bob Johnson', '2024-02-20');
+
+INSERT INTO Borrow VALUES
+(1, 1, 1, '2025-08-01', '2025-08-15', NULL),
+(2, 2, 2, '2025-08-05', '2025-08-19', '2025-08-18');
+
+-- Query: Find all currently borrowed books (not returned yet)
+SELECT B.Title, M.Name AS Borrower, Bo.BorrowDate, Bo.DueDate
+FROM Borrow Bo
+JOIN Book B ON Bo.BookID = B.BookID
+JOIN Member M ON Bo.MemberID = M.MemberID
+WHERE Bo.ReturnDate IS NULL;
+
+-- Query: List overdue books (due date passed, not returned)
+SELECT B.Title, M.Name AS Borrower, Bo.DueDate
+FROM Borrow Bo
+JOIN Book B ON Bo.BookID = B.BookID
+JOIN Member M ON Bo.MemberID = M.MemberID
+WHERE Bo.ReturnDate IS NULL AND Bo.DueDate < CURRENT_DATE;
+
+-- Query: Count of books borrowed by each member
+SELECT M.Name, COUNT(*) AS BooksBorrowed
+FROM Borrow Bo
+JOIN Member M ON Bo.MemberID = M.MemberID
+GROUP BY M.Name;
+
+-- Query: Most popular authors (by borrow count)
+SELECT A.Name AS Author, COUNT(*) AS BorrowCount
+FROM Borrow Bo
+JOIN Book B ON Bo.BookID = B.BookID
+JOIN Author A ON B.AuthorID = A.AuthorID
+GROUP BY A.Name
+ORDER BY BorrowCount DESC;
+
